@@ -1,36 +1,85 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🐍 Snake Arena (Multi-Snake)
 
-## Getting Started
+A modern, high-performance real-time multiplayer snake game built with **Next.js 16**, **TypeScript**, **Tailwind CSS**, and **WebRTC (PeerJS)**. Features custom room lobbies, customizable session lengths, dynamic session-closing warning announcements, power-ups, tactile non-neon aesthetics, and smart AI bots.
 
-First, run the development server:
+![Snake Arena Preview](https://raw.githubusercontent.com/pujanjoci/Multi-Snake/main/public/preview.png)
+
+---
+
+## ✨ Features
+
+- **🎮 Real-Time Multiplayer**: Instant peer-to-peer multiplayer using WebRTC with automatic local `BroadcastChannel` fallback.
+- **🏠 Custom Room Lobbies**: Create or join rooms with 4-letter room codes or direct invite links (`?room=CODE`).
+- **🎨 8 Snake Skins**: Tailored snake skins with expressive directional eyes and smooth gradients (Emerald Viper, Obsidian Shadow, Ruby Cobra, Sapphire Python, etc.).
+- **⏱️ Long Sessions & Dynamic Alerts**:
+  - Customizable session timers (3m, 5m, 10m, 15m).
+  - Multi-tiered ending notifications (2m warning, 1m rush broadcast, 30s emergency alert, and 10s countdown ticks).
+  - Desktop Web Notification API support.
+- **⚡ Power-Ups & Sprint**:
+  - **Boost**: Hold <kbd>SPACE</kbd> or <kbd>SHIFT</kbd> for a burst of speed.
+  - **Speed Boost (⚡)**, **Ghost Phase (👻)**, **Magnet (🧲)**, **Golden Orbs (⭐)**, and **Shrink Gem (✂️)**.
+- **🤖 Smart AI Bots**: Adaptive bots with collision lookahead and food pathfinding to fill empty lobby slots.
+- **🔊 Procedural Audio**: Built-in Web Audio API sound synthesizer for tactile pop effects, sirens, chimes, and victory fanfare (no external audio assets required).
+- **🏆 Live HUD & Match Podium**: Live leaderboard, mini-map, quick reaction emote wheel, and end-of-match awards.
+
+---
+
+## 🕹️ Controls
+
+| Action | Keyboard | Touch / Mobile |
+| :--- | :--- | :--- |
+| **Move Up** | <kbd>W</kbd> or <kbd>↑</kbd> | On-screen D-Pad Up |
+| **Move Down** | <kbd>S</kbd> or <kbd>↓</kbd> | On-screen D-Pad Down |
+| **Move Left** | <kbd>A</kbd> or <kbd>←</kbd> | On-screen D-Pad Left |
+| **Move Right** | <kbd>D</kbd> or <kbd>→</kbd> | On-screen D-Pad Right |
+| **Sprint / Boost** | <kbd>Space</kbd> or <kbd>Shift</kbd> | Touch Boost Button |
+| **Reaction Emotes** | Bottom Emote Bar / Number Keys | Bottom Emote Bar |
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18+ installed
+
+### Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/pujanjoci/Multi-Snake.git
+
+# Navigate to project directory
+cd Multi-Snake
+
+# Install dependencies
+npm install
+
+# Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Production Build
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm run start
+```
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🛠️ Tech Stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Framework**: Next.js 16 (Turbopack) & React 19
+- **Networking**: WebRTC (PeerJS) & BroadcastChannel API
+- **Rendering**: HTML5 Canvas (60+ FPS)
+- **Styling**: Tailwind CSS & Modern Slate Glassmorphism
+- **Audio**: Web Audio API (Synthesized procedural SFX)
+- **Effects**: canvas-confetti, Lucide Icons
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 📄 License
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT License. Feel free to use, modify, and build upon this game!
