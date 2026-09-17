@@ -542,7 +542,13 @@ export default function Home() {
       return;
     }
 
-    const tickRateMs = roomConfig.speed === 'fast' ? 75 : roomConfig.speed === 'slow' ? 120 : 95;
+    // Snake speed scaled to 0.65x of original pace for better tactical control
+    const tickRateMs =
+      roomConfig.speed === 'fast'
+        ? Math.round(75 / 0.65) // 115ms
+        : roomConfig.speed === 'slow'
+        ? Math.round(120 / 0.65) // 185ms
+        : Math.round(95 / 0.65); // 146ms (Normal)
 
     // Physics Loop
     gameLoopRef.current = setInterval(() => {
