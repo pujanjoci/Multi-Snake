@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -17,6 +17,15 @@ export const metadata: Metadata = {
   description: "Play real-time multiplayer snake with friends in custom rooms with customizable session timers, power-ups, and live ending alerts.",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#090d16",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -27,7 +36,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-slate-950 text-slate-100">{children}</body>
+      <body className="min-h-full flex flex-col bg-slate-950 text-slate-100 touch-none select-none overflow-hidden">{children}</body>
     </html>
   );
 }

@@ -700,6 +700,8 @@ export default function Home() {
             onDirectionChange={handleDirectionChange}
             onBoostStart={() => handleBoost(true)}
             onBoostEnd={() => handleBoost(false)}
+            onSendEmote={handleSendEmote}
+            boostFuel={gameState.players[myPlayerId]?.boostFuel ?? 100}
           />
         </>
       )}
