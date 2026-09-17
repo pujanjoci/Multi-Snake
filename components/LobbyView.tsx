@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { RoomConfig, SnakePlayer, AVAILABLE_SKINS, ChatMessage } from '../lib/types';
 import { 
   Play, Users, Settings, Clock, Bot, Sparkles, Copy, Check, 
-  MessageSquare, Send, ShieldCheck, Gamepad2, Share2 
+  MessageSquare, Send, ShieldCheck, Gamepad2, LogIn, ArrowRight 
 } from 'lucide-react';
 import { soundManager } from '../lib/audio';
 
@@ -21,6 +21,7 @@ interface LobbyViewProps {
   onUpdateConfig: (config: Partial<RoomConfig>) => void;
   onStartGame: () => void;
   onSendMessage: (text: string) => void;
+  onJoinRoomCode?: (code: string) => void;
 }
 
 export const LobbyView: React.FC<LobbyViewProps> = ({
@@ -36,9 +37,12 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
   onUpdateConfig,
   onStartGame,
   onSendMessage,
+  onJoinRoomCode,
 }) => {
   const [copied, setCopied] = useState(false);
   const [chatInput, setChatInput] = useState('');
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [joinCodeInput, setJoinCodeInput] = useState('');
 
   const copyRoomLink = () => {
     if (typeof window !== 'undefined') {
@@ -54,6 +58,16 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
     if (chatInput.trim()) {
       onSendMessage(chatInput.trim());
       setChatInput('');
+    }
+  };
+
+  const handleJoinSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanCode = joinCodeInput.trim().toUpperCase();
+    if (cleanCode && onJoinRoomCode) {
+      onJoinRoomCode(cleanCode);
+      setShowJoinModal(false);
+      setJoinCodeInput('');
     }
   };
 
@@ -83,24 +97,84 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
             </div>
           </div>
 
-          {/* Room Code & Share Link */}
-          <div className="flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-2.5 shadow-inner">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Room Code</span>
-              <span className="font-mono text-base font-black tracking-widest text-emerald-400">
-                {roomConfig.roomCode}
-              </span>
+          {/* Room Actions: Current Code, Share Link & Join Other Room */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-2 shadow-inner">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Current Room</span>
+                <span className="font-mono text-base font-black tracking-widest text-emerald-400">
+                  {roomConfig.roomCode}
+                </span>
+              </div>
+              <button
+                onClick={copyRoomLink}
+                className="ml-2 flex items-center gap-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-200 transition active:scale-95 border border-slate-700"
+                title="Copy Room Link"
+              >
+                {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                <span>{copied ? 'Copied!' : 'Copy Link'}</span>
+              </button>
             </div>
+
+            {/* Join Another Room Button */}
             <button
-              onClick={copyRoomLink}
-              className="ml-2 flex items-center gap-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-200 transition active:scale-95 border border-slate-700"
-              title="Copy Room Link"
+              onClick={() => setShowJoinModal(true)}
+              className="flex items-center gap-1.5 rounded-2xl bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 px-3.5 py-2 text-xs font-bold text-indigo-200 transition active:scale-95"
             >
-              {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-              <span>{copied ? 'Copied!' : 'Copy Link'}</span>
+              <LogIn className="h-4 w-4 text-indigo-400" />
+              <span>Join Another Room</span>
             </button>
           </div>
         </div>
+
+        {/* Modal: Join Room by Code */}
+        {showJoinModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
+            <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl">
+              <h3 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
+                <LogIn className="h-5 w-5 text-emerald-400" /> Join Existing Game Session
+              </h3>
+              <p className="text-xs text-slate-400 mb-4">
+                Enter the 4-character room code shared by your friend to join their match.
+              </p>
+
+              <form onSubmit={handleJoinSubmit} className="flex flex-col gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Room Code
+                  </label>
+                  <input
+                    type="text"
+                    autoFocus
+                    value={joinCodeInput}
+                    onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
+                    maxLength={6}
+                    placeholder="e.g. SNAK"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 font-mono text-lg font-black tracking-widest text-emerald-400 placeholder-slate-600 focus:border-emerald-500 focus:outline-none text-center"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowJoinModal(false)}
+                    className="rounded-xl border border-slate-700 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!joinCodeInput.trim()}
+                    className="flex items-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 px-5 py-2 text-xs font-bold text-slate-950 transition disabled:opacity-50"
+                  >
+                    <span>Connect</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* Main Grid: Left Settings / Right Players & Chat */}
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">

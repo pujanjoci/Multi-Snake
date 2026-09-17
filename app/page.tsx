@@ -298,6 +298,19 @@ export default function Home() {
     }
   };
 
+  const handleJoinRoomCode = async (targetCode: string) => {
+    setIsHost(false);
+    setRoomConfig((prev) => ({ ...prev, roomCode: targetCode, hostId: '' }));
+    
+    // Update browser URL without reload
+    const newUrl = `${window.location.pathname}?room=${targetCode}`;
+    window.history.pushState({ path: newUrl }, '', newUrl);
+
+    if (networkRef.current) {
+      await networkRef.current.joinRoom(targetCode, playerName, selectedSkinId);
+    }
+  };
+
   const handleUpdateConfig = (partial: Partial<RoomConfig>) => {
     const updated = { ...roomConfig, ...partial };
     setRoomConfig(updated);
@@ -661,6 +674,7 @@ export default function Home() {
           onUpdateConfig={handleUpdateConfig}
           onStartGame={handleStartGame}
           onSendMessage={handleSendMessage}
+          onJoinRoomCode={handleJoinRoomCode}
         />
       )}
 
