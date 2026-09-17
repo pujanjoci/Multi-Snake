@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import { GameState, Position, Direction } from '../lib/types';
+import { GameState, Direction } from '../lib/types';
 
 interface GameCanvasProps {
   gameState: GameState;
@@ -30,58 +30,88 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, myPlayerId })
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    let prevFoodCount = gameState.foods.length;
-
     const render = () => {
       const { width: gridW, height: gridH } = gameState.config.gridSize;
-      
-      // Auto resize canvas to container size
+
+      // Ensure canvas pixel dimensions match its displayed bounding rect with devicePixelRatio support
       const rect = canvas.getBoundingClientRect();
-      if (canvas.width !== rect.width || canvas.height !== rect.height) {
-        canvas.width = rect.width;
-        canvas.height = rect.height;
+      const dpr = window.devicePixelRatio || 1;
+      const targetW = Math.round(rect.width * dpr);
+      const targetH = Math.round(rect.height * dpr);
+
+      if (canvas.width !== targetW || canvas.height !== targetH) {
+        canvas.width = targetW;
+        canvas.height = targetH;
       }
 
-      const cellW = canvas.width / gridW;
-      const cellH = canvas.height / gridH;
+      ctx.save();
+      ctx.scale(dpr, dpr);
 
-      // 1. Draw Clean Dark Slate Arena Background
-      ctx.fillStyle = '#0a0e17';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const displayW = rect.width;
+      const displayH = rect.height;
 
-      // 2. Subtle Arena Grid (Non-neon, modern tactical slate)
+      // 1. Draw Full Screen Deep Dark Slate Backdrop
+      ctx.fillStyle = '#060911';
+      ctx.fillRect(0, 0, displayW, displayH);
+
+      // Safe margins so controls don't obscure arena on mobile
+      const isMobile = displayW <= 640;
+      const padTop = isMobile ? 58 : 20;
+      const padBottom = isMobile ? 150 : 24;
+      const padSide = isMobile ? 10 : 20;
+
+      const availW = Math.max(50, displayW - padSide * 2);
+      const availH = Math.max(50, displayH - (padTop + padBottom));
+
+      // UNIFORM SQUARE CELL SIZE (Guarantees perfect squares on all screen aspect ratios)
+      const cellSize = Math.min(availW / gridW, availH / gridH);
+      const arenaW = cellSize * gridW;
+      const arenaH = cellSize * gridH;
+
+      // Center the square grid arena in the available zone
+      const offsetX = padSide + (availW - arenaW) / 2;
+      const offsetY = padTop + (availH - arenaH) / 2;
+
+      // 2. Arena Floor
+      ctx.fillStyle = '#0b111e';
+      ctx.fillRect(offsetX, offsetY, arenaW, arenaH);
+
+      // 3. Subtle Grid Lines (Uniform Squares)
       ctx.strokeStyle = 'rgba(30, 41, 59, 0.45)';
       ctx.lineWidth = 1;
+
       for (let x = 0; x <= gridW; x++) {
+        const gx = offsetX + x * cellSize;
         ctx.beginPath();
-        ctx.moveTo(x * cellW, 0);
-        ctx.lineTo(x * cellW, canvas.height);
-        ctx.stroke();
-      }
-      for (let y = 0; y <= gridH; y++) {
-        ctx.beginPath();
-        ctx.moveTo(0, y * cellH);
-        ctx.lineTo(canvas.width, y * cellH);
+        ctx.moveTo(gx, offsetY);
+        ctx.lineTo(gx, offsetY + arenaH);
         ctx.stroke();
       }
 
-      // Outer Arena Border
-      ctx.strokeStyle = 'rgba(71, 85, 105, 0.4)';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(1.5, 1.5, canvas.width - 3, canvas.height - 3);
+      for (let y = 0; y <= gridH; y++) {
+        const gy = offsetY + y * cellSize;
+        ctx.beginPath();
+        ctx.moveTo(offsetX, gy);
+        ctx.lineTo(offsetX + arenaW, gy);
+        ctx.stroke();
+      }
+
+      // Outer Arena Border with subtle glow
+      ctx.strokeStyle = 'rgba(71, 85, 105, 0.6)';
+      ctx.lineWidth = 2.5;
+      ctx.strokeRect(offsetX, offsetY, arenaW, arenaH);
 
       const now = Date.now();
 
-      // 3. Draw Foods & Power-ups with tactile non-neon shaders
+      // 4. Draw Foods & Power-ups (Tactile non-neon orbs)
       gameState.foods.forEach((food) => {
-        const cx = food.x * cellW + cellW / 2;
-        const cy = food.y * cellH + cellH / 2;
-        const radius = Math.min(cellW, cellH) * 0.38;
+        const cx = offsetX + food.x * cellSize + cellSize / 2;
+        const cy = offsetY + food.y * cellSize + cellSize / 2;
+        const radius = cellSize * 0.38;
 
         ctx.save();
         if (food.type === 'GOLDEN') {
-          // Golden Orb with gentle pulse
-          const pulse = Math.sin(now / 150) * 2;
+          const pulse = Math.sin(now / 150) * (cellSize * 0.08);
           const grad = ctx.createRadialGradient(cx, cy, 1, cx, cy, radius + pulse);
           grad.addColorStop(0, '#fef08a');
           grad.addColorStop(0.7, '#eab308');
@@ -92,13 +122,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, myPlayerId })
           ctx.arc(cx, cy, radius + pulse, 0, Math.PI * 2);
           ctx.fill();
 
-          // Sparkle core
+          // Core shimmer
           ctx.fillStyle = '#ffffff';
           ctx.beginPath();
           ctx.arc(cx - radius * 0.3, cy - radius * 0.3, radius * 0.25, 0, Math.PI * 2);
           ctx.fill();
         } else if (food.type === 'SPEED') {
-          // Speed Chili / Power Orb
           ctx.fillStyle = '#f97316';
           ctx.beginPath();
           ctx.arc(cx, cy, radius, 0, Math.PI * 2);
@@ -110,7 +139,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, myPlayerId })
           ctx.textBaseline = 'middle';
           ctx.fillText('⚡', cx, cy);
         } else if (food.type === 'GHOST') {
-          // Ghost Mushroom
           ctx.fillStyle = '#a855f7';
           ctx.beginPath();
           ctx.arc(cx, cy, radius, 0, Math.PI * 2);
@@ -122,7 +150,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, myPlayerId })
           ctx.textBaseline = 'middle';
           ctx.fillText('👻', cx, cy);
         } else if (food.type === 'MAGNET') {
-          // Magnet Gem
           ctx.fillStyle = '#06b6d4';
           ctx.beginPath();
           ctx.arc(cx, cy, radius, 0, Math.PI * 2);
@@ -134,7 +161,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, myPlayerId })
           ctx.textBaseline = 'middle';
           ctx.fillText('🧲', cx, cy);
         } else {
-          // Regular Clean Apple / Berry
+          // Regular Clean Apple
           const grad = ctx.createRadialGradient(cx - radius * 0.2, cy - radius * 0.2, 1, cx, cy, radius);
           grad.addColorStop(0, '#fca5a5');
           grad.addColorStop(0.6, '#ef4444');
@@ -154,7 +181,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, myPlayerId })
         ctx.restore();
       });
 
-      // 4. Draw Boost Particle Trails
+      // 5. Draw Boost Particle Trails
       particlesRef.current = particlesRef.current.filter((p) => {
         p.x += p.vx;
         p.y += p.vy;
@@ -174,7 +201,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, myPlayerId })
         return true;
       });
 
-      // 5. Draw Snakes
+      // 6. Draw Snakes
       Object.values(gameState.players).forEach((player) => {
         if (!player.isAlive || player.body.length === 0) return;
 
@@ -191,26 +218,25 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, myPlayerId })
         // Draw snake body segments from tail to head
         for (let i = player.body.length - 1; i >= 0; i--) {
           const seg = player.body[i];
-          const cx = seg.x * cellW + cellW / 2;
-          const cy = seg.y * cellH + cellH / 2;
-          const radius = Math.min(cellW, cellH) * (i === 0 ? 0.46 : 0.4);
+          const cx = offsetX + seg.x * cellSize + cellSize / 2;
+          const cy = offsetY + seg.y * cellSize + cellSize / 2;
+          const radius = cellSize * (i === 0 ? 0.46 : 0.4);
 
           // Add particles if boosting
           if (player.isBoosting && i === player.body.length - 1 && Math.random() < 0.4) {
             particlesRef.current.push({
-              x: cx + (Math.random() - 0.5) * 8,
-              y: cy + (Math.random() - 0.5) * 8,
+              x: cx + (Math.random() - 0.5) * 6,
+              y: cy + (Math.random() - 0.5) * 6,
               vx: (Math.random() - 0.5) * 1.5,
               vy: (Math.random() - 0.5) * 1.5,
               color: skin.accentColor,
-              size: 4,
+              size: cellSize * 0.25,
               alpha: 0.8,
               life: 1,
             });
           }
 
           // Shading gradient along the snake length
-          const t = i / Math.max(1, player.body.length);
           const grad = ctx.createRadialGradient(cx - radius * 0.2, cy - radius * 0.2, 1, cx, cy, radius);
           grad.addColorStop(0, skin.accentColor);
           grad.addColorStop(0.7, skin.primaryColor);
@@ -224,8 +250,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, myPlayerId })
           // Connect segments smoothly
           if (i > 0) {
             const nextSeg = player.body[i - 1];
-            const ncx = nextSeg.x * cellW + cellW / 2;
-            const ncy = nextSeg.y * cellH + cellH / 2;
+            const ncx = offsetX + nextSeg.x * cellSize + cellSize / 2;
+            const ncy = offsetY + nextSeg.y * cellSize + cellSize / 2;
 
             // Only connect if adjacent (handle wrap-around gracefully)
             const dx = Math.abs(nextSeg.x - seg.x);
@@ -244,15 +270,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, myPlayerId })
 
         // Draw Head Features (Eyes, Expressive Face)
         const headSeg = player.body[0];
-        const headX = headSeg.x * cellW + cellW / 2;
-        const headY = headSeg.y * cellH + cellH / 2;
-        const headRadius = Math.min(cellW, cellH) * 0.46;
+        const headX = offsetX + headSeg.x * cellSize + cellSize / 2;
+        const headY = offsetY + headSeg.y * cellSize + cellSize / 2;
+        const headRadius = cellSize * 0.46;
 
         drawSnakeFace(ctx, headX, headY, headRadius, player.direction, skin.accentColor, isMe);
 
         // Highlight ring for local player
         if (isMe) {
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
           ctx.lineWidth = 2;
           ctx.beginPath();
           ctx.arc(headX, headY, headRadius + 3, 0, Math.PI * 2);
@@ -260,25 +286,28 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, myPlayerId })
         }
 
         // Floating Player Name Tag
-        ctx.font = 'bold 10px sans-serif';
+        const fontSize = Math.max(9, Math.floor(cellSize * 0.6));
+        ctx.font = `bold ${fontSize}px sans-serif`;
         ctx.textAlign = 'center';
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
         const nameWidth = ctx.measureText(player.name).width;
-        ctx.fillRect(headX - nameWidth / 2 - 4, headY - headRadius - 16, nameWidth + 8, 14);
+        ctx.fillRect(headX - nameWidth / 2 - 4, headY - headRadius - fontSize - 5, nameWidth + 8, fontSize + 3);
 
         ctx.fillStyle = isMe ? '#67e8f9' : '#e2e8f0';
-        ctx.fillText(player.name, headX, headY - headRadius - 6);
+        ctx.fillText(player.name, headX, headY - headRadius - 5);
 
         // Floating Emote Bubble (if active)
         if (player.emote && player.emote.expiresAt > now) {
-          ctx.font = '20px sans-serif';
+          const emoteSize = Math.max(16, Math.floor(cellSize * 1.1));
+          ctx.font = `${emoteSize}px sans-serif`;
           ctx.textAlign = 'center';
-          ctx.fillText(player.emote.symbol, headX, headY - headRadius - 22);
+          ctx.fillText(player.emote.symbol, headX, headY - headRadius - fontSize - 8);
         }
 
         ctx.restore();
       });
 
+      ctx.restore();
       animationFrameRef.current = requestAnimationFrame(render);
     };
 
@@ -292,10 +321,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, myPlayerId })
   }, [gameState, myPlayerId]);
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-slate-950 flex items-center justify-center">
+    <div className="relative h-full w-full overflow-hidden bg-slate-950 flex items-center justify-center touch-none">
       <canvas
         ref={canvasRef}
-        className="h-full w-full object-contain cursor-crosshair"
+        className="h-full w-full block cursor-crosshair touch-none"
       />
     </div>
   );
