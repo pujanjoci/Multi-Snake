@@ -663,6 +663,7 @@ export default function Home() {
       <NotificationOverlay
         notification={notification}
         timeRemaining={gameState.timeRemaining}
+        onDismiss={() => setNotification(null)}
       />
 
       {/* Lobby State */}
